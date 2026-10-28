@@ -10,6 +10,17 @@ from pydantic import BaseModel, Field
 #import literal to limit the allowed fuel types
 from typing import Literal
 
+#import adapter to connect FastAPI to Tuning.py
+from backend.simulation_adapter import configure_simulation
+
+#allows FastAPI to return the graph as an image
+from fastapi.responses import Response
+
+#imports function tha runs simulation engine
+from backend.simulation_adapter import run_simulation
+
+
+
 #Creates the backend server
 app = FastAPI()
 
@@ -47,7 +58,25 @@ def home():
 #receives engine settings
 @app.post("/simulate")
 def simulate(settings: EngineSettings):
+
+    #passes the engine settings to Tuning.py through adapter
+    configure_simulation(settings)
+    
+    #sends settings back to host
     return {
         "message": "Engine settings received",
         "settings": settings.model_dump()
         }
+
+#runs engine simulation and returns MAP graph
+@app.post("/simulate-graph")
+def simulate_graph(settings: EngineSettings):
+
+    #passes user inputs to Tuning.py
+    configure_simulation(settings)
+
+    #runs simulation and gets image
+    image_data = run_simulation()
+
+    #sends the image back to React
+    return Response(content=image_data, media_type="image/png")

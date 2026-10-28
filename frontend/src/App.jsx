@@ -21,6 +21,14 @@ function App() {
 
   //stores fuel type chosen by user
   const [fuelType, setFuelType] = useState("");
+
+  //stores graph return by Python
+  const [graphURL, setGraphURL] = useState(null);
+
+  //checks if simulation is running
+  const [isRunning, setIsRunning] = useState(false);
+  
+
   
   //constants used to calculate atomspheric pressire
   const P0_kpa = 101.325;
@@ -46,7 +54,8 @@ function App() {
   async function handleSubmit(event) {
     //prevents website from reloading
     event.preventDefault();
-  
+    
+    setIsRunning(true);
 
     //stores the engine settings entered by the use
     //converts strings into number
@@ -61,7 +70,7 @@ function App() {
 
     try {
       // Sends the settings to FastAPI
-      const response = await fetch("http://127.0.0.1:8000/simulate", {
+      const response = await fetch("http://127.0.0.1:8000/simulate-graph", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -69,20 +78,29 @@ function App() {
         body: JSON.stringify(engineSettings)
       });
 
-      // Checks if the backend accepted the settings
+      //checks if the backend accepted the settings
       if (!response.ok) {
         throw new Error("Backend rejected the settings");
       }
+        //gets the graph image returned by FastAPI
+        const imageBlob = await response.blob();
 
-      // Gets the response from the backend
-      const data = await response.json();
+        //checks the image type and size returned by FastAPI
+        console.log("Graph type:", imageBlob.type);
+        console.log("Graph size:", imageBlob.size);
 
-      // Displays the backend response
-      console.log("Backend response:", data);
+        //creates a temporary URL for the graph
+        const imageURL = URL.createObjectURL(imageBlob);
+
+      //stores the graph URL so React can display it
+        setGraphURL(imageURL);
 
     } catch (error) {
-      // Displays an error if the request fails
+      //displays an error if the request fails
       console.error("Simulation request failed:", error);
+    } finally {
+      //stops loading message when request is finished
+      setIsRunning(false);
     }
   }
 
@@ -127,7 +145,7 @@ function App() {
       <form onSubmit={handleSubmit}>
         <div>
           {/* Stores and updates the elevation entered by the user */}
-          <label>Elevation:</label>
+          <label>Elevation (Meters) [-400 to 8000]: </label>
           <input 
             type="number" 
             min="-400"
@@ -140,7 +158,7 @@ function App() {
         </div>
 
         <div>
-          <label>Idle RPM:</label>
+          <label>Idle RPM [500 to 1000]: </label>
           {/* Stores and updates the idle RPM entered by the user */}
           <input 
             type="number"
@@ -154,7 +172,7 @@ function App() {
         </div>
 
         <div>
-          <label>Redline RPM:</label>
+          <label>Redline RPM [5000 to 10000]: </label>
           {/* Stores and updates the Redline RPM entered by the user */}
           <input 
             type="number" 
@@ -168,7 +186,7 @@ function App() {
         </div>
 
         <div>
-          <label>Naturally Aspirated Horsepower: </label>
+          <label>Naturally Aspirated Horsepower [Must be greater than 1]: </label>
           {/* Stores and updates the Horsepower entered by the user */}
           <input 
             type="number"
@@ -182,6 +200,27 @@ function App() {
 
         <div>
           <label>Target Boost PSI:</label>
+          {/* Shows how to calculate target boost PSI */}
+          <details style={{ display: "inline-block", marginLeft: "8px", position: "relative" }}>
+            <summary style={{ cursor: "pointer", border: "1px solid gray", borderRadius: "4px", padding: "2px 8px" }}>
+              ?
+            </summary>
+
+            {/* Displays the explanation when clicked */}
+            <div style={{ position: "absolute", background: "#333", color: "white", padding: "12px", width: "280px", zIndex: 1, borderRadius: "5px", textAlign: "left" }}>
+              <p>
+                To find your target boost PSI, add the boost pressure
+                from your system to the atmospheric pressure.
+              </p>
+
+              <p>
+                Example: If atmospheric pressure is 10 PSI and your
+                boost system provides 6 PSI, your target boost
+                pressure would be 16 PSI.
+              </p>
+            </div>
+          </details>
+          
           {/* Stores and updates the BoostPSI entered by the user */}
           <input 
             type="number"
@@ -209,8 +248,29 @@ function App() {
           </select>
         </div>
 
-        <button type="submit">Run Simulation</button>
+        <button type="submit" disabled={isRunning}>
+          {isRunning ? "Running Simulation..." : "Run Simulation"}
+        </button>
+
+        {/* Displays a message while the simulation runs */}
+        {isRunning && (
+          <p>Simulation in progress. Please wait for the results.</p>
+        )}
+
       </form>
+      {/* Displays the graph after the simulation finishes */}
+      {graphURL && (
+        <div>
+          <h2>Engine Simulation Results</h2>
+
+          {/* Displays the MAP graph returned by Python */}
+          <img
+            src={graphURL}
+            alt="Engine MAP Simulation Graph"
+            style={{ width: "100%", maxWidth: "1000px" }}
+          />
+        </div>
+      )}
     </div>
   )
 }
