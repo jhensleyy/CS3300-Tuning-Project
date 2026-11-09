@@ -4,6 +4,20 @@ import Tuning
 #allows us to store graph in memory
 from io import BytesIO
 
+#fake clock used instead of real time while the simulation runs
+#sleep() moves the clock forward instead of actually waiting
+class FakeClock:
+    def __init__(self):
+        self.current_time = 0.0
+
+    #returns the current simulated time
+    def time(self):
+        return self.current_time
+
+    #skips ahead instead of pausing
+    def sleep(self, seconds):
+        self.current_time += seconds
+
 #passes the engine settings from FastAPI to Tuning.py
 def configure_simulation(settings):
  
@@ -58,8 +72,17 @@ def run_simulation():
     Tuning.map_history.clear()
     Tuning.map_history.extend([0.0] * 450)
 
-    #runs the existing simulation for 45 seconds
-    Tuning.simulate_engine_data(duration_seconds=45)
+        #swaps in a fake clock so the 45 second simulation finishes instantly
+    #Tuning.py is not changed, it just reads time from the fake clock
+    real_clock = Tuning.time
+    Tuning.time = FakeClock()
+
+    try:
+        #runs the existing simulation for 45 simulated seconds
+        Tuning.simulate_engine_data(duration_seconds=45)
+    finally:
+        #puts the real clock back even if the simulation crashes
+        Tuning.time = real_clock
 
     #update MAP graph with simulation reults 
     Tuning.update_graphs_for_save()
