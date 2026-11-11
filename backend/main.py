@@ -72,11 +72,11 @@ def simulate(settings: EngineSettings):
 @app.post("/simulate-graph")
 def simulate_graph(settings: EngineSettings):
 
-    #passes user inputs to Tuning.py
-    configure_simulation(settings)
+    #stores the engine configuration returned by the adapter
+    config = configure_simulation(settings)
 
-    #runs simulation and gets image
-    image_data = run_simulation()
+    #runs the simulation using the user's engine settings
+    image_data = run_simulation(config)
 
     #sends the image back to React
     return Response(content=image_data, media_type="image/png")
