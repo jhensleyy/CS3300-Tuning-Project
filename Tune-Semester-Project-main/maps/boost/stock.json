@@ -1,0 +1,5 @@
+{
+  "name": "stock",
+  "description": "Factory-style tune: gradual spool, full boost near 90% of redline",
+  "points": [[0.55, 0.0], [0.75, 0.7], [0.9, 1.0], [1.0, 1.0]]
+}

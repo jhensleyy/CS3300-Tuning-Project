@@ -1,0 +1,5 @@
+{
+  "name": "early_spool",
+  "description": "Small turbo: full boost early in the rev range, held to redline",
+  "points": [[0.40, 0.0], [0.55, 0.8], [0.65, 1.0], [1.0, 1.0]]
+}
