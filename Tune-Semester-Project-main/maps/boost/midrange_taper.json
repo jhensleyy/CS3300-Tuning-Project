@@ -1,0 +1,5 @@
+{
+  "name": "midrange_taper",
+  "description": "Turbo that peaks in the midrange and tapers off toward redline",
+  "points": [[0.45, 0.0], [0.6, 1.0], [0.8, 1.0], [1.0, 0.7]]
+}
